@@ -1,0 +1,11 @@
+.env
+storage
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.venv
+venv
+compiler_service/__pycache__
+app/__pycache__

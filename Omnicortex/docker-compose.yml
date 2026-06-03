@@ -1,0 +1,60 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: omnicortex-postgres
+    environment:
+      POSTGRES_DB: omnicortex
+      POSTGRES_USER: omnicortex
+      POSTGRES_PASSWORD: omnicortex
+    ports:
+      - "5432:5432"
+    volumes:
+      - omnicortex-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U omnicortex -d omnicortex"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  compiler:
+    build:
+      context: ./compiler_service
+    container_name: omnicortex-compiler
+    environment:
+      LATEX_COMPILER_SERVICE_TOKEN: omnicortex-compiler-local-token
+      LATEX_ENGINE: xelatex
+      LATEX_TIMEOUT_SECONDS: 180
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+    container_name: omnicortex-backend
+    env_file:
+      - .env
+    environment:
+      AUTH_BACKEND: postgres
+      POSTGRES_DSN: postgresql://omnicortex:omnicortex@postgres:5432/omnicortex
+      LATEX_COMPILER_SERVICE_URL: http://compiler:8080
+      LATEX_COMPILER_SERVICE_TOKEN: omnicortex-compiler-local-token
+    depends_on:
+      postgres:
+        condition: service_healthy
+      compiler:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  omnicortex-postgres-data:

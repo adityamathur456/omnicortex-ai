@@ -1,0 +1,6 @@
+name = "omnicortex-imagen-proxy"
+main = "src/index.ts"
+compatibility_date = "2026-04-26"
+
+[ai]
+binding = "AI"
